@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group 'com.caisin.tools'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation 'com.github.javaparser:javaparser-core:3.22.1'
+    implementation 'cn.hutool:hutool-all:5.6.5'
+    // https://mvnrepository.com/artifact/org.freemarker/freemarker
+    implementation group: 'org.freemarker', name: 'freemarker', version: '2.3.31'
+//    implementation files("${System.properties['java.home']}/../lib/tools.jar")
+    implementation files("C:/Users/Caisin/.jdks/corretto-1.8.0_282/lib/tools.jar")
+}
+
+test {
+    useJUnitPlatform()
+}
