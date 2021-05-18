@@ -6,6 +6,7 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 
 import java.io.File;
@@ -24,8 +25,9 @@ public class OldSourceParseTest {
     }
 
     public void astTest() {
-        String srcDir = "E:/work/Asiainfo/tainjin/code/old/acctmanm-tjin/0506/online/acctmanm/src-drecv/com/ailk/acctmanm/tjin/consign/processor";
-        String outDir = "E:/code/java/tools/outpath";
+        String srcDir = "E:/work/Asiainfo/tainjin/code/old/acctmanm-tjin/0506/online/";
+//        String srcDir = "E:/work/Asiainfo/tainjin/code/old/acctmanm-tjin/0506/online/acctmanm/src-drecv/com/ailk/acctmanm/tjin/consign/processor";
+        String outDir = "E:/code/java/tools/outpath/";
 
         FileUtils.deepSearchDo(srcDir, (file) -> {
             String fileName = file.getName();
@@ -46,12 +48,13 @@ public class OldSourceParseTest {
     private void dealSingleFile(String srcDir, String outDir, File file) throws FileNotFoundException {
         CompilationUnit parse = StaticJavaParser.parse(file);
 //        parse.addImport("lombok.extern.slf4j.Slf4j");
-        //所有方法调用
         List<MethodCallExpr> nodes = parse.findAll(MethodCallExpr.class);
         dealNodes(parse, nodes);
 
         List<SimpleName> simpleNames = parse.findAll(SimpleName.class);
-        simpleNames.forEach(this::dealSimpleName);
+        simpleNames.forEach(sm->{
+            dealSimpleName(parse,sm);
+        });
         List<Name> names = parse.findAll(Name.class);
         names.forEach(this::dealName);
 
@@ -239,9 +242,11 @@ public class OldSourceParseTest {
         if ("TimeUtil".equals(identifier)) {
             name.setQualifier(new Name("com.asiainfo.ams.acctcomp.util"));
         }
+
+
     }
 
-    private void dealSimpleName(SimpleName simpleName) {
+    private void dealSimpleName(CompilationUnit parse, SimpleName simpleName) {
         String identifier = simpleName.getIdentifier();
         if ("IData".equals(identifier)) {
             simpleName.setIdentifier("Map<String, Object>");
@@ -258,6 +263,38 @@ public class OldSourceParseTest {
         if ("Cycle".equals(identifier)) {
             simpleName.setIdentifier("CycleDTO");
         }
+
+        if ("TaskConfig".equals(identifier)) {
+//            simpleName.setIdentifier("CycleDTO");
+            simpleName.setIdentifier("TaskContext.getTaskDealParam()");
+            parse.addImport("com.asiainfo.ams.acctcomp.session.TaskContext");
+            Node node = simpleName.getParentNode().get().getParentNode().get();
+            if(node instanceof FieldAccessExpr){
+                SimpleName name = ((FieldAccessExpr) node).getName();
+                String nameIdentifier = name.getIdentifier();
+                String s = "get" + (nameIdentifier.charAt(0) + "").toUpperCase() + nameIdentifier.substring(1) + "()";
+                if ("databaseNo".equals(nameIdentifier)) {
+                    s="getCenter()";
+                }
+                name.setIdentifier(s);
+            }
+            System.out.println("node = " + node);
+        }
+
+       /* simpleName.getParentNode().ifPresent(n->{
+            String pStr = n.toString();
+            if (!"TaskConfig".equals(identifier)
+//                   &&pStr.contains("TaskConfig")
+                    &&pStr.endsWith("TaskConfig."+identifier)
+            ) {
+                String s = "get" + (identifier.charAt(0) + "").toUpperCase() + identifier.substring(1) + "()";
+                if ("databaseNo".equals(identifier)) {
+                    s="getCenter()";
+                }
+                simpleName.setIdentifier(s);
+                System.out.println("identifier = " + identifier);
+            }
+        });*/
 
         if (!(identifier.equals("Exception") || identifier.equals("throwException")) && identifier.endsWith("Exception")) {
             String error = identifier.replace("Exception", "Error");
